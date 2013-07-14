@@ -21,6 +21,7 @@ References:
    - https://developer.mozilla.org/en-US/docs/JSON#JSON_in_Firefox_2
 */
 
+var restler = require('restler');
 var fs = require('fs');
 var program = require('commander');
 var cheerio = require('cheerio');
@@ -61,14 +62,27 @@ var clone = function(fn) {
     return fn.bind({});
 };
 
+var loadUrl = function(url, checksFile) {
+    restler.get(url).on('complete', function(html) {
+        var checkJson = checkHtmlFile(html, checksFile);
+        var outJson = JSON.stringify(checkJson, null, 4);
+        console.log(outJson);
+    });
+}
+
 if(require.main == module) {
     program
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
-        .parse(process.argv);
-    var checkJson = checkHtmlFile(program.file, program.checks);
-    var outJson = JSON.stringify(checkJson, null, 4);
-    console.log(outJson);
+        .option('-u, --url <url>', 'url of the file')
+	 .parse(process.argv);
+	if (program.url)
+		loadUrl(program.url, program.checks);
+	else{ 
+   	var checkJson = checkHtmlFile(program.file, program.checks);
+    	var outJson = JSON.stringify(checkJson, null, 4);
+    	console.log(outJson);
+	}
 } else {
     exports.checkHtmlFile = checkHtmlFile;
 }
